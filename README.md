@@ -15,7 +15,6 @@ This is an exploration of the [twitteR package](https://cran.r-project.org/web/p
 10. Go down to the "Create my access token" button under Token Actions and click it
 11. Note the Access Token and Access Token Secret IDs
 
-
 ##Set Up Files
 
 1. Create a directory called `private`
@@ -26,3 +25,8 @@ This is an exploration of the [twitteR package](https://cran.r-project.org/web/p
 1. Fill in the 4 IDs from Twitter in the appropriate places inside `fill_API_info.R`
 2. Run this script
 3. Open `explore_twitter.R` and run it
+
+##Caveats
+
+* Don't forget to fill in the Callback URL with `http://127.0.0.1:1410` when creating the app on the Twitter side
+* Sometimes it's necessary to regenerate the keys to get the R function to set up the connection to work
