@@ -29,4 +29,4 @@ This is an exploration of the [twitteR package](https://cran.r-project.org/web/p
 ##Caveats
 
 * Don't forget to fill in the Callback URL with `http://127.0.0.1:1410` when creating the app on the Twitter side
-* Sometimes it's necessary to regenerate the keys to get the R function to set up the connection to work
+* Sometimes it's necessary to regenerate the keys to get the R function to set up the connection working
