@@ -1,6 +1,11 @@
 # Playing with TwitteR
 
-This is an exploration of the [twitteR package](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf) for accessing the Twitter API in R. I use `explore_twitter.R` as a file that loads the API key info from a non-shared CSV file and authorizes API access. I use the rest of the file to try different things in the R Studio environment using *twitteR*. I include `fill_API_info.R` as dummy version of the R script I use to create the CSV file with the Twitter API info 
+This is an exploration of the [twitteR package](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf) for accessing the Twitter API in R. All the explore scripts first load the API key info from a non-shared (here) CSV file and then get API access.
+
+##Current Scripts
+ 
+* `explore_hastags.R` looks at twitter hashtag frequencies for related accounts
+* `fill_API_info.R` is a dummy version of the R script I use to create the CSV file with the Twitter API info 
 
 ##Setup in Twitter
 
@@ -24,9 +29,9 @@ This is an exploration of the [twitteR package](https://cran.r-project.org/web/p
 
 1. Fill in the 4 IDs from Twitter in the appropriate places inside `fill_API_info.R`
 2. Run this script
-3. Open `explore_twitter.R` and run it
+3. Open an explore script like `explore_twitter.R` and run it
 
 ##Caveats
 
 * Don't forget to fill in the Callback URL with `http://127.0.0.1:1410` when creating the app on the Twitter side
-* Sometimes it's necessary to regenerate the keys to get the R function to set up the connection working
+* Sometimes it's necessary to regenerate the keys to get the R function that sets up the connection to work

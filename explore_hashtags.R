@@ -2,11 +2,6 @@
 ## This is a script file for looking at twitter hashtag frequencies for related accounts
 ##
 
-# Setting everything up ---------------------------------------------------
-
-# This assumes I've created a single-row CSV with the various API keys
-#   from creating an app at https://apps.twitter.com/
-
 if(!require(twitteR)) {install.packages("twitteR"); library(twitteR)}
 if(!require(dplyr)) {install.packages("dplyr"); library(dplyr)}
 if(!require(tidyr)) {install.packages("tidyr"); library(tidyr)}   
@@ -14,7 +9,9 @@ if(!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
 
 # API housekeeping to open connection to Twitter --------------------------
 
-# informatiin for opening connection kept in csv file created by fill_API_info.R script
+# information for opening connection is kept in a single-row CSV file with the various 
+# API keys derived from creating an app at https://apps.twitter.com/ (CSV file created 
+# by created by fill_API_info.R script
 secrets <- read.csv("private/secret_stuff.csv", stringsAsFactors = FALSE)
 
 setup_twitter_oauth(consumer_key=secrets$Consumer.Key, 
