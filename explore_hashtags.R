@@ -23,12 +23,12 @@ setup_twitter_oauth(consumer_key=secrets$Consumer.Key,
 
 
 # decide which accounts to look at
-tw_accounts <- c("Gartner_inc", "forrester", "idc")
+tw_accounts <- c("Gartner_inc", "forrester", "IDC")
 
 #tw_accounts <- c("HillaryClinton", "DrJillStein", "GovGaryJohnson", "realDonaldTrump")
 
 # read in the user timelines for these accounts with a cap of 1200 
-tweets <- unlist(lapply(tw_accounts, userTimeline, n=1200, excludeReplies=FALSE))
+tweets <- unlist(lapply(tw_accounts, userTimeline, n=1000, excludeReplies=FALSE))
 
 # convert this tweet info to a dataframe
 tw <- twListToDF(tweets)
@@ -58,19 +58,42 @@ hashtags_df <- select(tw, screenName, created) %>%
 earliest <- min(hashtags_df$time)
 
 
-# build a table of the top 20 hashtags by frequency
-hashtag_freq <- as.data.frame(table(hashtags_df$hashtag)) %>%
-  rename(Hashtag = Var1) %>%
-  arrange(desc(Freq)) %>% 
-  head(n=20) %>% 
-  mutate(Hashtag = reorder(Hashtag, Freq))
+top_hashtags <- function (use_tw_accounts) {
   
-  
-# make the title for the chart
-title_txt <- paste0("Top 20 Hashtags\nAccounts: ", paste(tw_accounts, collapse = ", "), "\n", "From: ", format(earliest, "%B %d, %Y"))
+  use_hashtags_df <- filter(hashtags_df, account %in% use_tw_accounts)
 
-# make a flipped bat chart
-p = ggplot(hashtag_freq, aes(x = Hashtag, y = Freq)) + geom_bar(stat="identity", fill = "blue")
-p + coord_flip() + labs(title = title_txt)
+  # build a table of the top 20 hashtags by frequency
+  hashtag_freq <- data.frame(table(use_hashtags_df$hashtag))
+
+  hashtag_freq <- arrange(hashtag_freq, desc(Freq)) %>% 
+                  head(n=20) %>% 
+                  mutate(Hashtag = reorder(Var1, Freq))
+  
+  # make the title for the chart
+  title_txt <- paste0("Top 20 Hashtags\nAccounts: ", paste(use_tw_accounts, collapse = ", "), "\n", "From ", format(earliest, "%B %d, %Y"), " to Now")
+  
+  # make a flipped bat chart
+  p = ggplot(hashtag_freq, aes(x = Hashtag, y = Freq)) + geom_bar(stat="identity", fill = "blue")
+  p + coord_flip() + labs(title = title_txt)
+}
+
+freq_by_account <- function (the_vector, the_title) {
+  account_freq <- as.data.frame(table(the_vector)) %>%
+    setNames(c("Account", "Freq")) %>%
+    mutate(Account = reorder(Account, Freq))
+  
+  # make the title for the chart
+  title_txt <- paste0(the_title, "\nAccounts: ", paste(tw_accounts, collapse = ", "), "\n", "From ", format(earliest, "%B %d, %Y"), " to Now")
+  
+  # make a flipped bat chart
+  p = ggplot(account_freq, aes(x = Account, y = Freq)) + geom_bar(stat="identity", fill = "blue")
+  p + coord_flip() + labs(title = title_txt)
+}
+
+top_hashtags(tw_accounts)
+lapply(tw_accounts, top_hashtags)
+freq_by_account(hashtags_df$account, "Hashtags Used")
+freq_by_account(tw$screenName, "Tweets")
+
 
 # loosely based on https://www.r-bloggers.com/using-r-to-find-obamas-most-frequent-twitter-hashtags/
