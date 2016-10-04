@@ -2,10 +2,16 @@
 ## This is a script file for looking at twitter hashtag frequencies for related accounts
 ##
 
+
+# Set up required libraries and graphics file directory -------------------
+
 if(!require(twitteR)) {install.packages("twitteR"); library(twitteR)}
 if(!require(dplyr)) {install.packages("dplyr"); library(dplyr)}
 if(!require(tidyr)) {install.packages("tidyr"); library(tidyr)}   
 if(!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
+if(!require(stringi)) {install.packages("stringi"); library(stringi)}
+
+if(!dir.exists("graphics")) dir.create("graphics")
 
 # API housekeeping to open connection to Twitter --------------------------
 
@@ -19,24 +25,38 @@ setup_twitter_oauth(consumer_key=secrets$Consumer.Key,
                     access_token=secrets$Access.Token, 
                     access_secret=secrets$Access.Token.Secret)
 
-# analyzing hashtag usage  ----------------------------------------------------------
 
+# get the tweets for certain accounts of interest  ----------------------------------------------------------
 
 # decide which accounts to look at
-tw_accounts <- c("Gartner_inc", "forrester", "IDC")
+tw_accounts <- c("Gartner_inc", "forrester", "idC")
 
+#major tech industry consultants "thought leaders"
+#tw_accounts <- c("Gartner_inc", "forrester", "idC")
+
+#presidential candidates in 2016
 #tw_accounts <- c("HillaryClinton", "DrJillStein", "GovGaryJohnson", "realDonaldTrump")
 
-# read in the user timelines for these accounts with a cap of 1200 
+# read in the user timelines for these accounts with a cap of 1000 
 tweets <- unlist(lapply(tw_accounts, userTimeline, n=1000, excludeReplies=FALSE))
 
 # convert this tweet info to a dataframe
 tw <- twListToDF(tweets)
+# clean up the tweet texts for any character issues
+tw$text <- stri_trans_general(tw$text, "latin-ascii")
+# the Twitter API is forgiving of account name capitalization in fetching tweets, but 
+# it's better that the accounts vector exactly matches what Twitter sends back as an account name,
+# so let's reset the tw_accounts variable using this
+tw_accounts <- unique(tw$screenName)
+
+
+# identify hashtags and form a dataframe with a separate row for e --------
+
 
 # locate where hashtags are in each tweet's text producing a list 
 hashtag_matches <- gregexpr("#[[:alnum:]]+", tw$text) 
 
-# make a vector of the  hashtags for each tweet by (1) using this match list to create a list of vectors of hash tags 
+# make a vector of the  hashtags in every tweet by (1) using this match list to create a list of vectors of hash tags 
 # for each tweet, (2) replacing the value for no-hashtag tweets with a simple empty string, (3) collapsing the
 # hashtags as single commas-separated-value strings, and (4) unpakcking the lists into a vector suitable for use
 # as a column in a dataframe
@@ -48,15 +68,18 @@ extracted_hashtags <- regmatches(tw$text, hashtag_matches) %>%
 
 # build the table of hashtags by (1) grabbing the two existing columns we need, (2) adding the hashtags vector 
 # as a third column, (3) creating a duplicate row for each hash tag in a given tweet using the tidyr package, (4)
-# renaming the column heads, and (5) removing the non-hash-tag tweets 
+# renaming the column heads, and (5) removing the rows for non-hash-tag tweets 
 hashtags_df <- select(tw, screenName, created) %>%
                cbind(extracted_hashtags) %>% 
                separate_rows(extracted_hashtags, sep = ", ") %>% # from tidyr package
                rename(account = screenName, time = created, hashtag = extracted_hashtags) %>%
                filter(hashtag != "")
 
+# stire away earliest tweet time
 earliest <- min(hashtags_df$time)
 
+
+# define function to display top (20) hashtags for one or more acccounts --------
 
 top_hashtags <- function (use_tw_accounts) {
   
@@ -71,24 +94,39 @@ top_hashtags <- function (use_tw_accounts) {
   
   # make the title for the chart
   title_txt <- paste0("Top 20 Hashtags\nAccounts: ", paste(use_tw_accounts, collapse = ", "), "\n", "From ", format(earliest, "%B %d, %Y"), " to Now")
-  
-  # make a flipped bat chart
-  p = ggplot(hashtag_freq, aes(x = Hashtag, y = Freq)) + geom_bar(stat="identity", fill = "blue")
-  p + coord_flip() + labs(title = title_txt)
+    # make a flipped bat chart
+  p <- ggplot(hashtag_freq, aes(x = Hashtag, y = Freq)) + geom_bar(stat="identity", fill = "blue") + 
+       coord_flip() + labs(title = title_txt)
+  # print it to the console
+  print(p)
+  # save it as a file with a name based on the account names used
+  ggsave(filename=paste0(paste(use_tw_accounts, collapse = "-"),"-tophts.png"), path="graphics", plot=p)
 }
 
+
+# define function to display freuencies of tweeting or hash tagging -------
+
+
 freq_by_account <- function (the_vector, the_title) {
+  # tabulate the vector of the accunts in the appropriate dataframess
   account_freq <- as.data.frame(table(the_vector)) %>%
     setNames(c("Account", "Freq")) %>%
     mutate(Account = reorder(Account, Freq))
   
-  # make the title for the chart
+  # make the title for the chart comparing different accounts using the 2d parameter text
   title_txt <- paste0(the_title, "\nAccounts: ", paste(tw_accounts, collapse = ", "), "\n", "From ", format(earliest, "%B %d, %Y"), " to Now")
-  
   # make a flipped bat chart
-  p = ggplot(account_freq, aes(x = Account, y = Freq)) + geom_bar(stat="identity", fill = "blue")
-  p + coord_flip() + labs(title = title_txt)
+  p = ggplot(account_freq, aes(x = Account, y = Freq)) + geom_bar(stat="identity", fill = "blue") + 
+      coord_flip() + labs(title = title_txt)
+  # print it to the console
+  print(p)
+  # save it as a file with a name based on the account names used
+  ggsave(filename=paste0(the_title,"-comparison.png"), path="graphics", plot=p)  
+  
 }
+
+
+# Do it -------------------------------------------------------------------
 
 top_hashtags(tw_accounts)
 lapply(tw_accounts, top_hashtags)
