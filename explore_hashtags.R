@@ -10,6 +10,7 @@ if(!require(dplyr)) {install.packages("dplyr"); library(dplyr)}
 if(!require(tidyr)) {install.packages("tidyr"); library(tidyr)}   
 if(!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
 if(!require(stringi)) {install.packages("stringi"); library(stringi)}
+if(!require(formattable)) {install.packages("formattable"); library(formattable)}
 
 if(!dir.exists("graphics")) dir.create("graphics")
 
@@ -29,28 +30,45 @@ setup_twitter_oauth(consumer_key=secrets$Consumer.Key,
 # get the tweets for certain accounts of interest  ----------------------------------------------------------
 
 # decide which accounts to look at
-tw_accounts <- c("Gartner_inc", "forrester", "idC")
+tw_accounts <- c("Gartner_inc", "forrester")
 
 #major tech industry consultants "thought leaders"
 #tw_accounts <- c("Gartner_inc", "forrester", "idC")
 
 #presidential candidates in 2016
-#tw_accounts <- c("HillaryClinton", "DrJillStein", "GovGaryJohnson", "realDonaldTrump")
+#tw_accounts <- c("HillaryClinton", "realDonaldTrump", "DrJillStein", "GovGaryJohnson")
 
-# read in the user timelines for these accounts with a cap of 1000 
+# read in the user timelines for these accounts with a request of 1000
+# lowering this number is a rough (but simple) way of increasing the "recency"
 tweets <- unlist(lapply(tw_accounts, userTimeline, n=1000, excludeReplies=FALSE))
 
 # convert this tweet info to a dataframe
 tw <- twListToDF(tweets)
 # clean up the tweet texts for any character issues
 tw$text <- stri_trans_general(tw$text, "latin-ascii")
+
+# make sure all the tweets for different accounts are in the smae time frame 
+# by gettting the most recent of the earliest dates for each account's tweets
+# and exluding all tweets that are earlier
+first_tweets <- group_by(tw, screenName) %>% 
+  summarise(Earliest.Date = min(created)) 
+
+before <- data.frame(table(tw$screenName))
+tw <- filter(tw, created >= max(first_tweets$Earliest.Date))
+after <- data.frame(table(tw$screenName))
+before_after <- merge(before, first_tweets, by=1, all = TRUE)
+before_after <- merge(before_after, after, by=1, all = TRUE)
+colnames(before_after) <- c("Account", "Before", "Earliest.Date", "After")
+print(formattable(before_after, caption = paste("Results of Excluding Tweets before", as.Date(max(first_tweets$Earliest.Date)))))
+
 # the Twitter API is forgiving of account name capitalization in fetching tweets, but 
 # it's better that the accounts vector exactly matches what Twitter sends back as an account name,
 # so let's reset the tw_accounts variable using this
+#
+# ALSO, this will throw out any account names for accounts that had no tweets during the period
 tw_accounts <- unique(tw$screenName)
 
-
-# identify hashtags and form a dataframe with a separate row for e --------
+# identify hashtags and make a separate row for each hashtag --------
 
 
 # locate where hashtags are in each tweet's text producing a list 
@@ -75,7 +93,7 @@ hashtags_df <- select(tw, screenName, created) %>%
                rename(account = screenName, time = created, hashtag = extracted_hashtags) %>%
                filter(hashtag != "")
 
-# stire away earliest tweet time
+# store away earliest tweet time
 earliest <- min(hashtags_df$time)
 
 
