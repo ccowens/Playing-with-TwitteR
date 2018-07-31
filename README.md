@@ -1,6 +1,6 @@
 # Playing with TwitteR
 
-This is an exploration of the [twitteR package](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf) for accessing the Twitter API in R. All the explore scripts first load the API key info from a non-shared (here) CSV file and then get API access.
+This is an exploration of the [twitteR package](https://cran.r-project.org/web/packages/twitteR/twitteR.pdf) for accessing the Twitter API in R. All the explore scripts first load the API key info from a non-shared (here) CSV file and then get API access. 
 
 ##Current Scripts
  
